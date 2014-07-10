@@ -54,7 +54,7 @@ def on_message(client, userdata, msg):
   if (msg.topic == "rfm12/18/lastseen"):
     last_seen = int(msg.payload)
   if (msg.topic == "rfm12/18/float/1"):
-    # normalize at see level (measure point is at 25m)
+    # normalize at sea level (measure point is at 25m)
     p_atmo = float(msg.payload) / 0.997275
   if (msg.topic == "rfm12/18/float/2"):
     t_atmo = float(msg.payload)
