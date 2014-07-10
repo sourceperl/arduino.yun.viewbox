@@ -4,6 +4,7 @@
 
 # misc lib
 import time
+import json
 # MQTT lib
 import paho.mqtt.client as mqtt
 # Access to YUN datastore lib (bridge interface ARM <->ATmega)
@@ -19,16 +20,19 @@ vig_level = {
 }
 
 value     = bridgeclient()
-last_seen = int(time.time())
+last_seen = 0
 vig_59    = 'I'
 vig_62    = 'I'
 p_atmo    = 0.0
 t_atmo    = 0.0
 
+# The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, rc):
   print("Connected with result code "+str(rc))
-  client.subscribe("rfm12/18/#")
-  client.subscribe("pub/meteo_vig/#")
+  client.subscribe("pub/meteo_vig/dep/59")
+  client.subscribe("pub/meteo_vig/dep/62")
+  client.subscribe("pub/house/garden/pressure_sea_level")
+  client.subscribe("pub/house/garden/temperature")
 
 def on_disconnect(client, userdata, rc):
   value.put("line_1", "MQTT disconnect".ljust(20))
@@ -40,25 +44,35 @@ def on_message(client, userdata, msg):
   global p_atmo
   global t_atmo
   global vig_level
-  # topic process
+
+  # log update
+  last_seen = int(time.time())
+
+  # process topic
   if (msg.topic == "pub/meteo_vig/dep/59"):
     try:
-      vig_59 = vig_level[int(msg.payload)]
-    except KeyError:
-      vig_59 = 'E'
-  if (msg.topic == "pub/meteo_vig/dep/62"):
+      index = int(json.loads(msg.payload)['value'])
+      vig_59 = vig_level[index]
+    except:
+      pass
+  elif (msg.topic == "pub/meteo_vig/dep/62"):
     try:
-      vig_62 = vig_level[int(msg.payload)]
-    except KeyError:
-      vig_62 = 'E'
-  if (msg.topic == "rfm12/18/lastseen"):
-    last_seen = int(msg.payload)
-  if (msg.topic == "rfm12/18/float/1"):
-    # normalize at sea level (measure point is at 25m)
-    p_atmo = float(msg.payload) / 0.997275
-  if (msg.topic == "rfm12/18/float/2"):
-    t_atmo = float(msg.payload)
+      index = int(json.loads(msg.payload)['value'])
+      vig_62 = vig_level[index]
+    except:
+      pass
+  elif (msg.topic == "pub/house/garden/pressure_sea_level"):
+    try:
+      p_atmo = float(json.loads(msg.payload)['value'])
+    except:
+      pass
+  elif (msg.topic == "pub/house/garden/temperature"):
+    try:
+      t_atmo = float(json.loads(msg.payload)['value'])
+    except:
+      pass
 
+# init MQTT client
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_disconnect = on_disconnect
@@ -77,16 +91,16 @@ while(1):
     # main loop
     # l1
     line1  = str("%7.2f hPa     59:%c" % (p_atmo, vig_59))
-    value.put("line_1", line1.ljust(20))
+    value.put("line_1", line1.ljust(20)[:20])
     # l2
     line2 = str("%7.2f C       62:%c" % (t_atmo, vig_62))
-    value.put("line_2", line2.ljust(20))
+    value.put("line_2", line2.ljust(20)[:20])
     # l3 for email
     # blank process by another script
     # l4
     t_update = int(time.time()) - last_seen
-    datetime = time.strftime("%H:%M %d/%m", time.localtime())
-    line4    = datetime + " age: " + str(t_update)
-    #line4 = time.strftime("%a, %d %b %y %H:%M", time.localtime())
-    value.put("line_4", line4.ljust(20))
-    print(line4.ljust(20))
+    status = "KO" if (t_update > 180) else "OK"
+    datetime = time.strftime("%d/%m/%y %H:%M:%S", time.localtime())
+    line4    = datetime + " " + status
+    value.put("line_4", line4.ljust(20)[:20])
+    print(line4.ljust(20)[:20])

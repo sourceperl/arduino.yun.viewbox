@@ -28,5 +28,13 @@ Add paho MQTT to your Python lib (test with 0.9 version):
 
   sudo pip install paho-mqtt
 
-System setup (cron/startup launch) for Python scripts is available on files 
+System setup (cron/startup launch) for Python scripts is available on files
 headers.
+
+Usage of json Python library is buggy on Yun (conflict with bridge json lib).
+More details here https://github.com/arduino/YunBridge/issues/18.
+
+To fix this problem:
+
+  opkg update
+  opkg upgrade cpu-mcu-bridge
