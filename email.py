@@ -6,7 +6,7 @@ import imaplib
 
 # cat /etc/crontabs/root 
 #   format [min] [hour] [day of month] [month] [day of week] [program to be run]
-#   */5 * * * * /usr/bin/python /root/test/email.py
+#   */5 * * * * /usr/bin/python /root/bin/email.py
 
 # Access to YUN datastore lib (bridge interface ARM <->ATmega)
 import sys
@@ -24,4 +24,3 @@ if retcode == 'OK':
   line3 = "%7d %s" % (nb_mail, 'e-mails' if (nb_mail > 1) else 'e-mail')
   value.put("line_3", line3.ljust(20))
 M.close()
-

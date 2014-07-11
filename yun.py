@@ -1,5 +1,5 @@
 # Python script for populate YUN datastore
-# add (sleep 10; python /root/test/mqtt.py >/dev/null 2>/dev/null)&
+# add (sleep 10; python /root/bin/mqtt.py >/dev/null 2>/dev/null)&
 # in /etc/rc.local to launch at startup
 
 # misc lib

@@ -24,17 +24,47 @@ Files
 Requirements
 ------------
 
+## Python
+
+### MQTT lib
+
 Add paho MQTT to your Python lib (test with 0.9 version):
 
   sudo pip install paho-mqtt
 
-System setup (cron/startup launch) for Python scripts is available on files
-headers.
+### json lib
 
 Usage of json Python library is buggy on Yun (conflict with bridge json lib).
 More details here https://github.com/arduino/YunBridge/issues/18.
 
 To fix this problem:
 
-  opkg update
-  opkg upgrade cpu-mcu-bridge
+    opkg update
+    opkg upgrade cpu-mcu-bridge
+
+## System setup
+
+    mkdir /root/bin/
+    cp yun.py /root/bin/
+    cp email.py /root/bin/
+
+### **yun.py** call at Yun startup
+
+    root@Arduino:~/bin# cat /etc/rc.local
+    # Put your custom commands here that should be executed once
+    # the system init finished. By default this file does nothing.
+
+    wifi-live-or-reset
+    boot-complete-notify
+    # add this to /etc/rc.local
+    (sleep 10; python /root/bin/yun.py >/dev/null 2>/dev/null)&
+
+    exit 0
+
+### **email.py** call by cron every 5 mins
+
+    root@Arduino:~/bin# cat /etc/crontabs/root
+    #format [min] [hour] [day of month] [month] [day of week] [program to be run]
+    # add this to /etc/crontabs/root
+    */5 * * * * /usr/bin/python /root/bin/email.py
+
