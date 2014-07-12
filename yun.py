@@ -1,6 +1,4 @@
 # Python script for populate YUN datastore
-# add (sleep 10; python /root/bin/mqtt.py >/dev/null 2>/dev/null)&
-# in /etc/rc.local to launch at startup
 
 # misc lib
 import time

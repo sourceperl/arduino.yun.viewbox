@@ -17,8 +17,8 @@ datastores values and send it to the LCD I2C interface.
 Files
 -----
 
-* **yun.py** format data from MQTT broker send it to datastore
-* **email.py** check unread mail number on IMAP server send it to datastore
+* **yun.py** format data from MQTT broker send it to datastore.
+* **email.py** check unread mail number on IMAP server send it to datastore.
 * **Yun\_LCD\_I2C.ino** is ATmega 32U4 sketch, do datastore to LCD transfer.
 
 Requirements
@@ -30,7 +30,7 @@ Requirements
 
 Add paho MQTT to your Python lib (test with 0.9 version):
 
-  sudo pip install paho-mqtt
+    sudo pip install paho-mqtt
 
 ### json lib
 
@@ -47,19 +47,6 @@ To fix this problem:
     mkdir /root/bin/
     cp yun.py /root/bin/
     cp email.py /root/bin/
-
-### **yun.py** call at Yun startup
-
-    root@Arduino:~/bin# cat /etc/rc.local
-    # Put your custom commands here that should be executed once
-    # the system init finished. By default this file does nothing.
-
-    wifi-live-or-reset
-    boot-complete-notify
-    # add this to /etc/rc.local
-    (sleep 10; python /root/bin/yun.py >/dev/null 2>/dev/null)&
-
-    exit 0
 
 ### **email.py** call by cron every 5 mins
 
