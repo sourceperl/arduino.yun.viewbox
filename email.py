@@ -15,6 +15,7 @@ M.select()
 if retcode == "OK":
   msg = {}
   msg['value'] = len(messages[0].split())
+  msg['update'] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
   publish.single("pub/mail/loic.celine/unread", json.dumps(msg),
                  hostname="192.168.1.60")
 M.close()
