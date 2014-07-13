@@ -10,9 +10,9 @@ this informations are available on a local MQTT broker.
 A script check regulary the number of unread mail on an IMAP server. The result
 is also display on the panel.
 
-Every data process and formating is doing by Python script. Each lines of the
-LCD is a datastore value (key "line\_1" to "line\_4"). The arduino skecth read
-datastores values and send it to the LCD I2C interface.
+Every data process and formating is doing by Python script. Screen content is
+send on a 80 bytes bloc with bridge/datastore. The arduino skecth read 
+datastore value and send it to the LCD I2C interface.
 
 Files
 -----

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Python script for populate YUN datastore
 
 # misc lib
@@ -17,23 +19,25 @@ vig_level = {
 4 : 'R',
 }
 
-value     = bridgeclient()
+store     = bridgeclient()
 last_seen = 0
 vig_59    = 'I'
 vig_62    = 'I'
 p_atmo    = 0.0
 t_atmo    = 0.0
+nb_mail   = 0
 
-# The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, rc):
   print("Connected with result code "+str(rc))
   client.subscribe("pub/meteo_vig/dep/59")
   client.subscribe("pub/meteo_vig/dep/62")
   client.subscribe("pub/house/garden/pressure_sea_level")
   client.subscribe("pub/house/garden/temperature")
+  client.subscribe("pub/mail/loic.celine/unread")
 
 def on_disconnect(client, userdata, rc):
-  value.put("line_1", "MQTT disconnect".ljust(20))
+  store.put("line_1", "MQTT disconnect".ljust(20))
+
 
 def on_message(client, userdata, msg):
   global last_seen
@@ -42,6 +46,7 @@ def on_message(client, userdata, msg):
   global p_atmo
   global t_atmo
   global vig_level
+  global nb_mail
 
   # log update
   last_seen = int(time.time())
@@ -69,6 +74,11 @@ def on_message(client, userdata, msg):
       t_atmo = float(json.loads(msg.payload)['value'])
     except:
       pass
+  elif (msg.topic == "pub/mail/loic.celine/unread"):
+    try:
+      nb_mail = int(json.loads(msg.payload)['value'])
+    except:
+      pass
 
 # init MQTT client
 client = mqtt.Client()
@@ -88,17 +98,17 @@ while(1):
     _now = time.time()
     # main loop
     # l1
-    line1  = str("%7.2f hPa     59:%c" % (p_atmo, vig_59))
-    value.put("line_1", line1.ljust(20)[:20])
+    line1  = str("%7.2f hPa     59:%c" % (p_atmo, vig_59)).ljust(20)[:20]
     # l2
-    line2 = str("%7.2f C       62:%c" % (t_atmo, vig_62))
-    value.put("line_2", line2.ljust(20)[:20])
-    # l3 for email
-    # blank process by another script
+    line2 = str("%7.2f C       62:%c" % (t_atmo, vig_62)).ljust(20)[:20]
+    # l3
+    line3 = "%7d %s" % (nb_mail, 'e-mails' if (nb_mail > 1) else 'e-mail')
+    line3 = line3.ljust(20)[:20]
     # l4
     t_update = int(time.time()) - last_seen
-    status = "KO" if (t_update > 180) else "OK"
+    status = "KO" if (t_update > 240) else "OK"
     datetime = time.strftime("%d/%m/%y %H:%M:%S", time.localtime())
-    line4    = datetime + " " + status
-    value.put("line_4", line4.ljust(20)[:20])
-    print(line4.ljust(20)[:20])
+    line4    = (datetime + " " + status).ljust(20)[:20]
+    store.put("str_bloc", (line1+line2+line3+line4[:80]))
+
+sys.exit(0)
