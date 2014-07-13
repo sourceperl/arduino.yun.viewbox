@@ -38,7 +38,6 @@ def on_connect(client, userdata, rc):
 def on_disconnect(client, userdata, rc):
   store.put("line_1", "MQTT disconnect".ljust(20))
 
-
 def on_message(client, userdata, msg):
   global last_seen
   global vig_59
@@ -109,6 +108,6 @@ while(1):
     status = "KO" if (t_update > 240) else "OK"
     datetime = time.strftime("%d/%m/%y %H:%M:%S", time.localtime())
     line4    = (datetime + " " + status).ljust(20)[:20]
-    store.put("str_bloc", (line1+line2+line3+line4[:80]))
+    store.put("str_bloc", line1+line2+line3+line4)
 
 sys.exit(0)
