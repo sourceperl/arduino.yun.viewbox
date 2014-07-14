@@ -36,7 +36,15 @@ def on_connect(client, userdata, rc):
   client.subscribe("pub/mail/loic.celine/unread")
 
 def on_disconnect(client, userdata, rc):
-  store.put("line_1", "MQTT disconnect".ljust(20))
+  print("MQTT disconnect")
+  # handle reconnect (wait 5s before retry if error)
+  while(1):
+    try:
+      client.reconnect()
+      break
+    except:
+      pass
+    time.sleep(5)
 
 def on_message(client, userdata, msg):
   global last_seen
@@ -80,10 +88,10 @@ def on_message(client, userdata, msg):
       pass
 
 # init MQTT client
-client = mqtt.Client()
-client.on_connect = on_connect
+client               = mqtt.Client()
+client.on_connect    = on_connect
 client.on_disconnect = on_disconnect
-client.on_message = on_message
+client.on_message    = on_message
 client.connect("192.168.1.60", port=1883, keepalive=30)
 
 _now = 0.0
@@ -97,7 +105,7 @@ while(1):
     _now = time.time()
     # main loop
     # l1
-    line1  = str("%7.2f hPa     59:%c" % (p_atmo, vig_59)).ljust(20)[:20]
+    line1 = str("%7.2f hPa     59:%c" % (p_atmo, vig_59)).ljust(20)[:20]
     # l2
     line2 = str("%7.2f C       62:%c" % (t_atmo, vig_62)).ljust(20)[:20]
     # l3
