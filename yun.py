@@ -5,6 +5,7 @@
 # misc lib
 import time
 import json
+import threading
 # MQTT lib
 import paho.mqtt.client as mqtt
 # Access to YUN datastore lib (bridge interface ARM <->ATmega)
@@ -12,6 +13,7 @@ import sys
 sys.path.insert(0, '/usr/lib/python2.7/bridge/')
 from bridgeclient import BridgeClient as bridgeclient
 
+# global vars
 vig_level = {
 1 : 'V',
 2 : 'J',
@@ -19,6 +21,7 @@ vig_level = {
 4 : 'R',
 }
 
+th_lock   = threading.Lock()
 store     = bridgeclient()
 last_seen = 0
 vig_59    = 'I'
@@ -37,16 +40,9 @@ def on_connect(client, userdata, rc):
 
 def on_disconnect(client, userdata, rc):
   print("MQTT disconnect")
-  # handle reconnect (wait 5s before retry if error)
-  while(1):
-    try:
-      client.reconnect()
-      break
-    except:
-      pass
-    time.sleep(5)
 
 def on_message(client, userdata, msg):
+  # global vars
   global last_seen
   global vig_59
   global vig_62
@@ -54,10 +50,10 @@ def on_message(client, userdata, msg):
   global t_atmo
   global vig_level
   global nb_mail
-
-  # log update
+  # thread lock
+  th_lock.acquire()
+    # log update
   last_seen = int(time.time())
-
   # process topic
   if (msg.topic == "pub/meteo_vig/dep/59"):
     try:
@@ -85,24 +81,30 @@ def on_message(client, userdata, msg):
     try:
       nb_mail = int(json.loads(msg.payload)['value'])
     except:
-      pass
+       pass
+  # thread unlock
+  th_lock.release()
 
-# init MQTT client
-client               = mqtt.Client()
-client.on_connect    = on_connect
-client.on_disconnect = on_disconnect
-client.on_message    = on_message
-client.connect("192.168.1.60", port=1883, keepalive=30)
-
-_now = 0.0
-
-while(1):
-  # process message
-  client.loop(timeout=0.1)
-  # main loop run every 0.5s
-  now = time.time()
-  if (now > _now + 0.5):
-    _now = time.time()
+def main():
+  # global vars
+  global last_seen
+  global vig_59
+  global vig_62
+  global p_atmo
+  global t_atmo
+  global nb_mail
+  # init MQTT client
+  client               = mqtt.Client()
+  client.on_connect    = on_connect
+  client.on_disconnect = on_disconnect
+  client.on_message    = on_message
+  client.connect("192.168.1.60", port=1883, keepalive=30)
+  client.loop_start();
+  while(1):
+    # main loop run every 300 ms
+    time.sleep(0.3)
+    # thread lock
+    th_lock.acquire()
     # main loop
     # l1
     line1 = str("%7.2f hPa     59:%c" % (p_atmo, vig_59)).ljust(20)[:20]
@@ -116,6 +118,11 @@ while(1):
     status = "KO" if (t_update > 240) else "OK"
     datetime = time.strftime("%d/%m/%y %H:%M:%S", time.localtime())
     line4    = (datetime + " " + status).ljust(20)[:20]
+    # thread unlock
+    th_lock.release()
+    # send result to datastore
     store.put("str_bloc", line1+line2+line3+line4)
 
-sys.exit(0)
+if __name__ == '__main__':
+    main()
+    sys.exit(0)
